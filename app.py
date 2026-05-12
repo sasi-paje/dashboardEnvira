@@ -421,7 +421,7 @@ def update_dashboard(start_date, end_date, secretarias, status, data, n_clicks, 
     )
 
     ranking_html = []
-    for i, row in ranking.iterrows():
+    for i, row in ranking.reset_index(drop=True).iterrows():
         ranking_html.append(
             html.Div(
                 [
@@ -433,16 +433,18 @@ def update_dashboard(start_date, end_date, secretarias, status, data, n_clicks, 
             )
         )
 
-    df_table = df[["created_at", "channel_name", "secretaria", "current_status"]].copy()
-    df_table["created_at"] = df_table["created_at"].dt.strftime("%d/%m/%Y %H:%M")
-    df_table.columns = ["Data", "Canal", "Secretaria", "Status"]
+    df_table = df[["alert_id", "created_at", "channel_name", "secretaria", "current_status"]].copy()
+    df_table["data"] = df_table["created_at"].dt.strftime("%d/%m/%Y")
+    df_table["hora"] = df_table["created_at"].dt.strftime("%H:%M")
+    df_table = df_table[["alert_id", "data", "hora", "channel_name", "secretaria", "current_status"]]
+    df_table.columns = ["Protocolo", "Data", "Hora", "Canal", "Secretaria", "Status"]
     table = dash_table.DataTable(
         data=df_table.head(50).to_dict("records"),
         columns=[{"name": c, "id": c} for c in df_table.columns],
         page_size=15,
         style_table={"overflowX": "auto"},
         style_header={
-            "backgroundColor": "#1a365d",
+            "backgroundColor": "#14622C",
             "color": "white",
             "fontWeight": "600",
             "padding": "12px",
