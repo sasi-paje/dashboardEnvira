@@ -35,11 +35,13 @@ STATUS_MAP = {
     "Participante": "Participante",
     "Duplicado": "Duplicado",
     "Prefeitura": "Prefeitura",
-    "Concluído": "Concluído",
+    "Closed": "Concluído",
     "Reprovado": "Reprovado",
     "Secretaria de Serviço Social": "Assistência Social",
     "Secretaria de Obra": "Obras",
 }
+
+STATUS_CONCLUIDO = "Concluído"
 
 COLORS = {
     "primary": "#1a365d",
@@ -168,15 +170,15 @@ app.layout = html.Div(
                     [
                         html.Div(
                             [
-                                html.Div(className="metric-icon", children="⏳"),
+                                html.Div(className="metric-icon", children="✅"),
                                 html.Div(
-                                    className="metric-label", children="Em Triagem"
+                                    className="metric-label", children="Concluídos"
                                 ),
                             ],
                             className="metric-header",
                         ),
                         html.Div(
-                            className="metric-value gold", id="em-triagem", children="0"
+                            className="metric-value gold", id="concluidos", children="0"
                         ),
                     ],
                     className="metric-card gold",
@@ -205,17 +207,17 @@ app.layout = html.Div(
                     [
                         html.Div(
                             [
-                                html.Div(className="metric-icon", children="📈"),
+                                html.Div(className="metric-icon", children="⏱️"),
                                 html.Div(
-                                    className="metric-label", children="Taxa Triagem"
+                                    className="metric-label", children="Tempo Médio de Conclusão"
                                 ),
                             ],
                             className="metric-header",
                         ),
                         html.Div(
                             className="metric-value gold",
-                            id="taxa-triagem",
-                            children="0%",
+                            id="tempo-conclusao",
+                            children="0d 0h",
                         ),
                     ],
                     className="metric-card gold",
@@ -277,7 +279,10 @@ def get_data():
             e.created_at,
             cs.name AS current_status,
             cs.color AS status_color,
-            e.data
+            e.data,
+            (SELECT sh.created_at FROM status_history sh 
+             WHERE sh.sasi_event_id = e.alert_id AND sh.type = 'STATUS' AND sh.text = 'Concluído' 
+             ORDER BY sh.created_at ASC LIMIT 1) AS closed_at
         FROM sasi_events e
         LEFT JOIN channels ch ON ch.sasi_channel_id = e.channel_id
         LEFT JOIN current_status cs ON cs.sasi_event_id = e.id
@@ -289,6 +294,8 @@ def get_data():
     df["secretaria"] = df["channel_id"].map(SECRETARIAS_MAP).fillna("Outro")
     df["current_status"] = df["current_status"].map(STATUS_MAP).fillna(df["current_status"])
     df["created_at"] = pd.to_datetime(df["created_at"], utc=True).dt.tz_localize(None)
+    df["closed_at"] = pd.to_datetime(df["closed_at"], utc=True).dt.tz_localize(None)
+    df["tempo_conclusao"] = df["closed_at"] - df["created_at"]
     df["ano_mes"] = df["created_at"].dt.to_period("M").astype(str)
 
     return df
@@ -316,9 +323,9 @@ def update_dropdowns(data):
 @callback(
     Output("df-store", "data"),
     Output("total-alertas", "children"),
-    Output("em-triagem", "children"),
+    Output("concluidos", "children"),
     Output("secretaria-lider", "children"),
-    Output("taxa-triagem", "children"),
+    Output("tempo-conclusao", "children"),
     Output("grafico-secretaria", "figure"),
     Output("grafico-status", "figure"),
     Output("ranking-secretarias", "children"),
@@ -340,7 +347,7 @@ def update_dashboard(start_date, end_date, secretarias, status, data, n_clicks, 
     if ctx.triggered:
         trigger_id = ctx.triggered[0]["prop_id"].split(".")[0]
         if trigger_id == "clear-btn":
-            return "0", "0", "-", "0%", {}, {}, [], None, None, None, None, None
+            return "0", "0", "-", "0d 0h", {}, {}, [], None, None, None, None, None
 
     df = df_global.copy()
 
@@ -354,8 +361,16 @@ def update_dashboard(start_date, end_date, secretarias, status, data, n_clicks, 
         df = df[df["current_status"].isin(status)]
 
     total_alertas = len(df)
-    em_triagem = len(df[df["current_status"].isin(STATUS_TRIAGEM)])
-    taxa = (em_triagem / total_alertas * 100) if total_alertas > 0 else 0
+    concluidos = len(df[df["current_status"] == STATUS_CONCLUIDO])
+    
+    df_completed = df[df["current_status"] == STATUS_CONCLUIDO].dropna(subset=["tempo_conclusao"])
+    if len(df_completed) > 0:
+        avg_timedelta = df_completed["tempo_conclusao"].mean()
+        days = avg_timedelta.days
+        hours = avg_timedelta.seconds // 3600
+        tempo_conclusao = f"{days}d {hours}h"
+    else:
+        tempo_conclusao = "0d 0h"
 
     ranking = (
         df.groupby("secretaria")
@@ -466,9 +481,9 @@ def update_dashboard(start_date, end_date, secretarias, status, data, n_clicks, 
     return (
         {},
         total_alertas,
-        em_triagem,
+        concluidos,
         secretaria_lider,
-        f"{taxa:.1f}%",
+        tempo_conclusao,
         fig_bar,
         fig_pie,
         ranking_html,
