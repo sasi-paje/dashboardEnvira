@@ -29,6 +29,18 @@ SECRETARIAS_MAP = {
 
 STATUS_TRIAGEM = ["Assigned", "Triagem"]
 
+STATUS_MAP = {
+    "Assigned": "Atribuído",
+    "Triagem": "Triagem",
+    "Participante": "Participante",
+    "Duplicado": "Duplicado",
+    "Prefeitura": "Prefeitura",
+    "Concluído": "Concluído",
+    "Reprovado": "Reprovado",
+    "Secretaria de Serviço Social": "Assistência Social",
+    "Secretaria de Obra": "Obras",
+}
+
 COLORS = {
     "primary": "#1a365d",
     "secondary": "#2b6cb0",
@@ -275,6 +287,7 @@ def get_data():
     engine.dispose()
 
     df["secretaria"] = df["channel_id"].map(SECRETARIAS_MAP).fillna("Outro")
+    df["current_status"] = df["current_status"].map(STATUS_MAP).fillna(df["current_status"])
     df["created_at"] = pd.to_datetime(df["created_at"], utc=True).dt.tz_localize(None)
     df["ano_mes"] = df["created_at"].dt.to_period("M").astype(str)
 
@@ -358,6 +371,7 @@ def update_dashboard(start_date, end_date, secretarias, status, data, n_clicks, 
         y="total",
         color="total",
         color_continuous_scale=[[0, "#e8f5ec"], [1, "#14622C"]],
+        text_auto=True,
     )
     fig_bar.update_layout(
         showlegend=False,
@@ -369,7 +383,7 @@ def update_dashboard(start_date, end_date, secretarias, status, data, n_clicks, 
         yaxis=dict(tickfont=dict(color="#4a5568")),
         font=dict(family="Inter"),
     )
-    fig_bar.update_traces(marker=dict(line=dict(width=0)))
+    fig_bar.update_traces(marker=dict(line=dict(width=0)), textposition='outside')
 
     status_counts = df["current_status"].value_counts().reset_index()
     status_counts.columns = ["status", "total"]
@@ -392,10 +406,19 @@ def update_dashboard(start_date, end_date, secretarias, status, data, n_clicks, 
     )
     fig_pie.update_layout(
         paper_bgcolor="rgba(0,0,0,0)",
-        legend=dict(orientation="h", yanchor="bottom", y=-0.2, xanchor="center", x=0.5),
-        margin=dict(t=20, b=80, l=20, r=20),
+        legend=dict(
+            orientation="v", 
+            yanchor="top", 
+            y=0.5, 
+            xanchor="left", 
+            x=1.02
+        ),
+        margin=dict(t=20, b=20, l=20, r=120),
     )
-    fig_pie.update_traces(textposition="outside", textinfo="percent+label")
+    fig_pie.update_traces(
+        textinfo="label+value", 
+        texttemplate="%{label}: %{value}"
+    )
 
     ranking_html = []
     for i, row in ranking.iterrows():
