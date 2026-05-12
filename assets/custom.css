@@ -115,6 +115,24 @@ body {
     transform: translateY(-1px);
 }
 
+.clear-btn {
+    background: transparent;
+    color: var(--primary);
+    border: 2px solid var(--primary);
+    padding: 8px 22px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 0.875rem;
+    transition: all 0.2s;
+    height: 38px;
+}
+
+.clear-btn:hover {
+    background: var(--primary);
+    color: white;
+}
+
 .Select-placeholder {
     font-size: 0.875rem !important;
 }
