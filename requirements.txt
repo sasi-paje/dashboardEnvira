@@ -4,3 +4,4 @@ dash
 plotly
 pandas
 sqlalchemy
+requests

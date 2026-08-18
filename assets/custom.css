@@ -24,6 +24,7 @@
 body {
     margin: 0;
     background-color: var(--bg);
+    overflow-x: hidden;
 }
 
 ._dash-header {
@@ -62,6 +63,29 @@ body {
     margin: 8px 0 0 0;
     opacity: 0.9;
     font-size: 0.95rem;
+}
+
+.main-tabs {
+    margin: 0 24px 24px;
+}
+
+.main-tabs .tab-container {
+    border-bottom: 2px solid var(--border);
+}
+
+.main-tab {
+    padding: 14px 28px !important;
+    font-weight: 600 !important;
+    font-size: 0.9rem !important;
+    color: var(--text-light) !important;
+    background: transparent !important;
+    border: none !important;
+    border-bottom: 3px solid transparent !important;
+}
+
+.main-tab--selected {
+    color: var(--primary) !important;
+    border-bottom: 3px solid var(--primary) !important;
 }
 
 .filter-section {
@@ -235,6 +259,10 @@ body {
     margin: 0 24px 24px;
 }
 
+.ranking-row {
+    margin: 0 24px 24px;
+}
+
 .ranking-card {
     background: white;
     border-radius: var(--radius);
@@ -292,6 +320,7 @@ body {
     padding: 24px;
     box-shadow: var(--shadow);
     overflow: hidden;
+    min-width: 0;
 }
 
 @media (max-width: 1200px) {
