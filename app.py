@@ -838,5 +838,7 @@ def update_downloads_dashboard(apps_selecionados, n_clicks, clear_n_clicks):
     )
 
 
+server = app.server  # expõe o Flask para a Vercel
+app = server 
 if __name__ == "__main__":
-    app.run(port=8050)
+    app.run(host='0.0.0.0', port=8050)
