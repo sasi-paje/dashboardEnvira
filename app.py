@@ -839,4 +839,4 @@ def update_downloads_dashboard(apps_selecionados, n_clicks, clear_n_clicks):
 
 
 if __name__ == "__main__":
-    app.run(debug=True, host="127.0.0.1", port=8050)
+    app.run(port=8050)
